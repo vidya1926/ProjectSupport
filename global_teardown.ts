@@ -1,7 +1,8 @@
 import { FullConfig } from '@playwright/test';
-import path from 'path'
-import fs from 'fs'
+import path from 'path';
+import fs from 'fs';
 import { spawn } from 'child_process';
+
 async function globalTeardown(config: FullConfig) {
   console.log('Global teardown executed');
   const now = new Date();
@@ -13,22 +14,22 @@ async function globalTeardown(config: FullConfig) {
       : `WebExecution_Local_Report_${timestamp}.html`;
 
   return new Promise<void>((resolve, reject) => {
-
     const allureBinary = path.resolve('node_modules', '.bin', 'allure.cmd');
-    
-    //const generation = spawn(allureBinary, ['generate', '--single-file', 'allure-results', '--output', reportDir]);
 
     const generation = spawn(
-        allureBinary,
-        ['generate', '--single-file', 'allure-results', '--output', reportDir],
-        { shell: true }
-      );
-      const generationTimeout = setTimeout(() => reject(reportError), 150000);
+      allureBinary,
+      ['generate', '--single-file', 'allure-results', '--output', reportDir],
+      { shell: true }
+    );
+
+    const generationTimeout = setTimeout(() => {
+      reject(new Error('Allure report generation timed out'));
+    }, 150000);
 
     generation.on('exit', (exitCode) => {
       clearTimeout(generationTimeout);
       if (exitCode !== 0) {
-        return reject(reportError);
+        return reject(new Error(`Allure report generation failed with exit code ${exitCode}`));
       }
 
       const oldPath = path.join(reportDir, 'index.html');
